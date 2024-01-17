@@ -1,0 +1,47 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: logging
+  namespace: default
+  labels:
+    app: logging
+spec:
+  selector:
+    matchLabels:
+      app: logging
+  template:
+    metadata:
+      labels:
+        app: logging
+      annotations: {}
+    spec:
+      containers:
+        - name: default
+          image: demo-logging:latest
+          command: []
+          args: []
+          env:
+            - name: ConnectionStrings__Host
+              value: mongo-mongodb
+            - name: ConnectionStrings__Port
+              value: "27017"
+            - name: ConnectionStrings__Username
+              value: root
+            - name: ConnectionStrings__Password
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secrets
+                  key: mongodb-root-password
+                  optional: false
+          resources:
+            requests:
+              cpu: 256m
+              memory: 512M
+      restartPolicy: Always
+      serviceAccountName: logging
+      securityContext:
+        runAsUser: 64198
+        runAsGroup: 1000
+        fsGroup: 1000
+      imagePullSecrets:
+        - name: azure-image-pull-secret

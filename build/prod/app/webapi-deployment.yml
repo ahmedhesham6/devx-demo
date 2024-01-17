@@ -1,0 +1,63 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: webapi
+  namespace: default
+  labels:
+    app: webapi
+spec:
+  selector:
+    matchLabels:
+      app: webapi
+  template:
+    metadata:
+      labels:
+        app: webapi
+      annotations: {}
+    spec:
+      containers:
+        - name: default
+          image: demo-webapi:latest
+          command: []
+          args: []
+          env:
+            - name: ConnectionStrings__DefaultConnection
+              valueFrom:
+                secretKeyRef:
+                  name: application-secrets
+                  key: database-connection-string
+                  optional: false
+            - name: ConnectionStrings__Redis
+              value: redis:6379
+            - name: ConnectedServices__Logging
+              value: http://logging:8080
+            - name: Minio__Endpoint
+              value: minio
+            - name: Minio__Port
+              value: "9000"
+            - name: Minio__AccessKey
+              valueFrom:
+                secretKeyRef:
+                  name: minio
+                  key: rootUser
+                  optional: false
+            - name: Minio__SecretKey
+              valueFrom:
+                secretKeyRef:
+                  name: minio
+                  key: rootPassword
+                  optional: false
+            - name: Minio__Secure
+              value: "false"
+          resources:
+            requests:
+              cpu: 256m
+              memory: 512M
+      restartPolicy: Always
+      serviceAccountName: webapi
+      securityContext:
+        runAsUser: 64198
+        runAsGroup: 1000
+        fsGroup: 1000
+      imagePullSecrets:
+        - name: azure-image-pull-secret

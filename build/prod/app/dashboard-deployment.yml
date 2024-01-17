@@ -1,0 +1,35 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: dashboard
+  namespace: default
+  labels:
+    app: dashboard
+spec:
+  selector:
+    matchLabels:
+      app: dashboard
+  template:
+    metadata:
+      labels:
+        app: dashboard
+      annotations: {}
+    spec:
+      containers:
+        - name: default
+          image: demo-dashboard:latest
+          command: []
+          args: []
+          env: []
+          resources:
+            requests:
+              cpu: 256m
+              memory: 512M
+      restartPolicy: Always
+      serviceAccountName: dashboard
+      securityContext:
+        runAsUser: 64198
+        runAsGroup: 1000
+        fsGroup: 1000
+      imagePullSecrets:
+        - name: azure-image-pull-secret

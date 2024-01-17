@@ -1,0 +1,19 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: webapi-route
+  namespace: default
+  annotations: {}
+spec:
+  ingressClassName: openshift-default
+  rules:
+    - host: webapi.demo.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapi
+                port:
+                  number: 8080

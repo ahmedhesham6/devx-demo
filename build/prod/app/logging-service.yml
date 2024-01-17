@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: logging
+  namespace: default
+spec:
+  ports:
+    - name: "8080"
+      port: 8080
+  selector:
+    app: logging
+  type: ClusterIP

@@ -91,12 +91,137 @@ platform: v1.#Stack & {
 
 app: v1.#Stack & {
 	components: {
-		cowsay: {
+		common: {
+			$metadata: labels: secret: "existing"
+			traits.#Secret
+			secrets: {
+				dbConnection: {
+					name:     "application-secrets"
+					property: "database-connection-string"
+				}
+			}
+		}
+		// Secrets
+		minioUser: {
+			$metadata: labels: secret: "existing"
+			traits.#Secret
+			secrets: {
+				username: {
+					name:     "minio"
+					property: "rootUser"
+				}
+				password: {
+					name:     "minio"
+					property: "rootPassword"
+				}
+			}
+		}
+		mongoUser: {
+			$metadata: labels: secret: "existing"
+			traits.#Secret
+			secrets: {
+				password: {
+					name:     "mongo-secrets"
+					property: "mongodb-root-password"
+				}
+			}
+		}
+		// Workloads
+		dashboard: {
+			traits.#Exposable
+			endpoints: default: ports: [{
+				port: 4000
+			}, {
+				port: 4001
+			}]
 			traits.#Workload
 			containers: default: {
-				image: "docker/whalesay"
-				command: ["cowsay"]
-				args: ["Hello DevX!"]
+				image: "demo-dashboard:latest"
+				resources: requests: {
+					cpu:    "256m"
+					memory: "512M"
+				}
+			}
+		}
+		"dashboard-route": {
+			traits.#HTTPRoute
+			http: {
+				listener: "http"
+				hostnames: ["dashboard.demo.com"]
+				rules: [{
+					match: path: "/*"
+					backends: [
+						{
+							name:       dashboard.appName
+							endpoint:   dashboard.endpoints.default
+							containers: dashboard.containers
+							port:       4000
+						},
+					]
+				}]
+			}
+		}
+		logging: {
+			traits.#Exposable
+			endpoints: default: ports: [{
+				port: 8080
+			}]
+			traits.#Workload
+			containers: default: {
+				image: "demo-logging:latest"
+				resources: requests: {
+					cpu:    "256m"
+					memory: "512M"
+				}
+				env: {
+					ConnectionStrings__Host:     "mongo-mongodb"
+					ConnectionStrings__Port:     "27017"
+					ConnectionStrings__Username: "root"
+					ConnectionStrings__Password: mongoUser.secrets.password
+				}
+			}
+		}
+		webapi: {
+			traits.#Exposable
+			endpoints: default: ports: [{
+				port: 8080
+			}]
+			traits.#Workload
+			containers: default: {
+				image: "demo-webapi:latest"
+				resources: requests: {
+					cpu:    "256m"
+					memory: "512M"
+				}
+				env: {
+					ConnectionStrings__DefaultConnection: common.secrets.dbConnection
+					ConnectionStrings__Redis:             "redis:6379"
+					ConnectedServices__Logging:           "http://logging:8080"
+
+					Minio__Endpoint:  "minio"
+					Minio__Port:      "9000"
+					Minio__AccessKey: minioUser.secrets.username
+					Minio__SecretKey: minioUser.secrets.password
+					Minio__Secure:    "false"
+				}
+			}
+		}
+		"webapi-route": {
+			traits.#HTTPRoute
+			http: {
+				listener: "http"
+				hostnames: ["webapi.demo.com"]
+				rules: [{
+					match: path: "/*"
+					backends: [
+						{
+							name:       webapi.appName
+							endpoint:   webapi.endpoints.default
+							containers: webapi.containers
+							port:       8080
+						},
+					]
+				}]
 			}
 		}
 	}
@@ -138,3 +263,23 @@ main: v1.#Stack & {
 
 	}
 }
+
+installer: v1.#Stack & {
+	components: {
+		installerCDApplication: argoapp.#ArgoCDApplication & {
+			$metadata: labels: output: "installer"
+			k8s: {
+				platform.components.cluster.k8s
+				namespace: platform.components.cluster.namespace
+			}
+			application: {
+				name: "demo-installer"
+				source: {
+					repoURL: "git@github.com"
+					path:    "build/prod/main"
+				}
+			}
+		}
+	}
+}
+

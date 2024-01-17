@@ -1,0 +1,19 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: dashboard-route
+  namespace: default
+  annotations: {}
+spec:
+  ingressClassName: openshift-default
+  rules:
+    - host: dashboard.demo.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: dashboard
+                port:
+                  number: 4000
