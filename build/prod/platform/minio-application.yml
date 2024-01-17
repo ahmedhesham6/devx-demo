@@ -1,0 +1,230 @@
+metadata:
+  name: minio
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+spec:
+  source:
+    repoURL: https://charts.min.io
+    targetRevision: 5.0.13
+    helm:
+      releaseName: minio
+      values: |
+        nameOverride: ""
+        fullnameOverride: ""
+        clusterDomain: cluster.local
+        image:
+          repository: quay.io/minio/minio
+          tag: RELEASE.2023-10-16T04-13-43Z
+          pullPolicy: IfNotPresent
+        imagePullSecrets: []
+        mcImage:
+          repository: quay.io/minio/mc
+          tag: RELEASE.2023-07-07T07-13-57Z
+          pullPolicy: IfNotPresent
+        mode: distributed
+        additionalLabels: {}
+        additionalAnnotations: {}
+        ignoreChartChecksums: false
+        extraArgs: {}
+        extraVolumes: []
+        extraVolumeMounts: []
+        extraContainers: []
+        minioAPIPort: 9000
+        minioConsolePort: 9001
+        deploymentUpdate:
+          type: RollingUpdate
+          maxUnavailable: 0
+          maxSurge: 100%
+        statefulSetUpdate:
+          updateStrategy: RollingUpdate
+        priorityClassName: ""
+        runtimeClassName: ""
+        rootUser: ""
+        rootPassword: ""
+        existingSecret: ""
+        certsPath: /etc/minio/certs/
+        configPathmc: /etc/minio/mc/
+        mountPath: /export
+        bucketRoot: ""
+        drivesPerNode: 1
+        replicas: 3
+        pools: 1
+        tls:
+          enabled: false
+        trustedCertsSecret: ""
+        persistence:
+          enabled: true
+          annotations: {}
+          existingClaim: ""
+          storageClass: ""
+          volumeName: ""
+          accessMode: ReadWriteOnce
+          size: 5Gi
+          subPath: ""
+        service:
+          type: ClusterIP
+          port: 9000
+          nodePort: 32000
+          clusterIP: ""
+          loadBalancerIP: ""
+          annotations: {}
+          externalIPs: []
+        ingress:
+          enabled: false
+          ingressClassName: ""
+          labels: {}
+          annotations: {}
+          path: /
+          hosts: []
+          tls: []
+        consoleService:
+          type: ClusterIP
+          port: 9001
+          nodePort: 32001
+          clusterIP: ""
+          labels: {}
+          loadBalancerIP: ""
+          annotations: {}
+          externalIPs: []
+          path: /
+          hosts: []
+          tls: []
+        nodeSelector: {}
+        tolerations: []
+        affinity: {}
+        topologySpreadConstraints: []
+        securityContext:
+          enabled: true
+          runAsUser: 1000
+          runAsGroup: 1000
+          fsGroup: 1000
+          fsGroupChangePolicy: OnRootMismatch
+        podAnnotations: {}
+        podLabels: {}
+        resources:
+          requests:
+            memory: 512Mi
+        policies: {}
+        makePolicyJob:
+          securityContext:
+            enabled: false
+            runAsUser: 1000
+            runAsGroup: 1000
+          resources:
+            requests:
+              memory: 128Mi
+          exitCommand: ""
+        users: []
+        makeUserJob:
+          securityContext:
+            enabled: false
+            runAsUser: 1000
+            runAsGroup: 1000
+          resources:
+            requests:
+              memory: 128Mi
+          exitCommand: ""
+        svcaccts: []
+        makeServiceAccountJob:
+          securityContext:
+            enabled: false
+            runAsUser: 1000
+            runAsGroup: 1000
+          resources:
+            requests:
+              memory: 128Mi
+          exitCommand: ""
+        buckets:
+          - name: demo
+            policy: none
+            purge: false
+        makeBucketJob:
+          securityContext:
+            enabled: false
+            runAsUser: 1000
+            runAsGroup: 1000
+          resources:
+            requests:
+              memory: 128Mi
+          exitCommand: ""
+        customCommands: []
+        customCommandJob:
+          securityContext:
+            enabled: false
+            runAsUser: 1000
+            runAsGroup: 1000
+          resources:
+            requests:
+              memory: 128Mi
+          exitCommand: ""
+        postJob:
+          podAnnotations: {}
+          annotations: {}
+          securityContext:
+            enabled: false
+            runAsUser: 1000
+            runAsGroup: 1000
+            fsGroup: 1000
+          nodeSelector: {}
+          tolerations: []
+          affinity: {}
+        environment: []
+        extraSecret: ""
+        oidc:
+          enabled: false
+          configUrl: https://identity-provider-url/.well-known/openid-configuration
+          clientId: minio
+          clientSecret: ""
+          claimName: policy
+          scopes: openid,profile,email
+          redirectUri: https://console-endpoint-url/oauth_callback
+          claimPrefix: ""
+          comment: ""
+        networkPolicy:
+          enabled: false
+          allowExternal: true
+        podDisruptionBudget:
+          enabled: false
+          maxUnavailable: 1
+        serviceAccount:
+          create: true
+          name: minio-sa
+        metrics:
+          serviceMonitor:
+            enable: false
+            includeNode: false
+            public: true
+            additionalLabels: {}
+            annotations: {}
+            relabelConfigs: {}
+            relabelConfigsCluster: {}
+            namespace: ""
+            interval: ""
+            scrapeTimeout: ""
+        etcd:
+          endpoints: []
+          pathPrefix: ""
+          corednsPathPrefix: ""
+          clientCert: ""
+          clientCertKey: ""
+    chart: minio
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5

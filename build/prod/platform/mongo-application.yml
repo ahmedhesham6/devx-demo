@@ -1,0 +1,45 @@
+metadata:
+  name: mongo
+  namespace: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+spec:
+  source:
+    repoURL: oci://registry-1.docker.io/bitnamicharts
+    targetRevision: 13.17.1
+    helm:
+      releaseName: mongo
+      values: |
+        image:
+          tag: 7.0-debian-11
+        podSecurityContext:
+          enabled: false
+        containerSecurityContext:
+          enabled: false
+        arbiter:
+          podSecurityContext:
+            enabled: false
+          containerSecurityContext:
+            enabled: false
+        auth:
+          existingSecret: mongo-secrets
+    chart: mongodb
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    retry:
+      limit: 5
